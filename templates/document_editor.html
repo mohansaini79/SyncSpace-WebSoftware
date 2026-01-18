@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Editor - SyncSpace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <link rel="stylesheet" href="/static/css/animations.css">
+    <style>
+        #documentEditor {
+            min-height: 600px;
+            outline: none;
+            font-family: 'Georgia', serif;
+            line-height: 1.8;
+            font-size: 16px;
+            padding: 2rem;
+        }
+        
+        #documentEditor:focus {
+            outline: none;
+        }
+
+        .toolbar-btn {
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .toolbar-btn:hover {
+            background-color: #f3f4f6;
+        }
+
+        .toolbar-btn.active {
+            background-color: #dbeafe;
+            color: #2563eb;
+        }
+
+        .remote-cursor {
+            position: fixed;
+            width: 2px;
+            height: 20px;
+            pointer-events: none;
+            z-index: 9999;
+            transition: all 0.1s ease;
+        }
+        
+        .cursor-flag {
+            position: absolute;
+            top: -20px;
+            left: 0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            white-space: nowrap;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b sticky top-0 z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center gap-4">
+                    <a href="/dashboard" class="text-2xl font-bold text-blue-600">SyncSpace</a>
+                    <div class="flex items-center gap-3">
+                        <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <div>
+                            <h1 id="documentTitle" class="text-lg font-semibold text-gray-800">Loading...</h1>
+                            <span id="saveStatus" class="text-xs text-gray-500">All changes saved</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <!-- Active Users -->
+                    <div id="activeUsers" class="flex items-center gap-2">
+                        <span class="text-sm text-gray-500">Loading...</span>
+                    </div>
+                    
+                    <a href="javascript:history.back()" class="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                        ← Back
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Toolbar -->
+    <div class="bg-white border-b sticky top-16 z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <div class="flex items-center gap-2 flex-wrap">
+                <!-- Text Formatting -->
+                <button onclick="documentEditor?.formatText('bold')" class="toolbar-btn" title="Bold (Ctrl+B)">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M12.954 11.616a3.5 3.5 0 10-4.909-4.909 3.5 3.5 0 004.91 4.909zm.637.637a5 5 0 11-7.071-7.071 5 5 0 017.07 7.071z"></path>
+                    </svg>
+                </button>
+                
+                <button onclick="documentEditor?.formatText('italic')" class="toolbar-btn" title="Italic (Ctrl+I)">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"></path>
+                    </svg>
+                </button>
+                
+                <button onclick="documentEditor?.formatText('underline')" class="toolbar-btn" title="Underline (Ctrl+U)">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zm-3 12a9 9 0 100-18 9 9 0 000 18z"></path>
+                    </svg>
+                </button>
+
+                <div class="w-px h-6 bg-gray-300 mx-2"></div>
+
+                <!-- Headers -->
+                <button onclick="documentEditor?.formatText('formatBlock', 'h1')" class="toolbar-btn font-bold" title="Heading 1">
+                    H1
+                </button>
+                
+                <button onclick="documentEditor?.formatText('formatBlock', 'h2')" class="toolbar-btn font-bold" title="Heading 2">
+                    H2
+                </button>
+                
+                <button onclick="documentEditor?.formatText('formatBlock', 'h3')" class="toolbar-btn font-bold" title="Heading 3">
+                    H3
+                </button>
+                
+                <button onclick="documentEditor?.formatText('formatBlock', 'p')" class="toolbar-btn" title="Normal Text">
+                    P
+                </button>
+
+                <div class="w-px h-6 bg-gray-300 mx-2"></div>
+
+                <!-- Lists -->
+                <button onclick="documentEditor?.formatText('insertUnorderedList')" class="toolbar-btn" title="Bullet List">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"></path>
+                    </svg>
+                </button>
+                
+                <button onclick="documentEditor?.formatText('insertOrderedList')" class="toolbar-btn" title="Numbered List">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"></path>
+                    </svg>
+                </button>
+
+                <div class="w-px h-6 bg-gray-300 mx-2"></div>
+
+                <!-- Alignment -->
+                <button onclick="documentEditor?.formatText('justifyLeft')" class="toolbar-btn" title="Align Left">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h8a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h8a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"></path>
+                    </svg>
+                </button>
+                
+                <button onclick="documentEditor?.formatText('justifyCenter')" class="toolbar-btn" title="Align Center">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm2 4a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zm-2 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm2 4a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clip-rule="evenodd"></path>
+                    </svg>
+                </button>
+                
+                <button onclick="documentEditor?.formatText('justifyRight')" class="toolbar-btn" title="Align Right">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm4 4a1 1 0 011-1h8a1 1 0 110 2H8a1 1 0 01-1-1zm-4 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm4 4a1 1 0 011-1h8a1 1 0 110 2H8a1 1 0 01-1-1z" clip-rule="evenodd"></path>
+                    </svg>
+                </button>
+
+                <div class="w-px h-6 bg-gray-300 mx-2"></div>
+
+                <!-- Clear Formatting -->
+                <button onclick="documentEditor?.formatText('removeFormat')" class="toolbar-btn" title="Clear Formatting">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Editor Content -->
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="bg-white rounded-lg shadow-lg">
+            <div id="documentEditor" contenteditable="true" class="prose max-w-none">
+                <p>Start typing...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Typing Indicator (will be dynamically added) -->
+
+    <!-- Scripts -->
+    <script src="/static/js/socket-client.js"></script>
+    <script src="/static/js/utils.js"></script>
+    <script src="/static/js/document-editor.js"></script>
+
+    <script>
+        // Get document ID from URL
+        const pathParts = window.location.pathname.split('/');
+        const documentId = pathParts[pathParts.length - 1];
+        
+        console.log('Document ID:', documentId);
+
+        const user = getCurrentUser();
+
+        // Check authentication
+        if (!localStorage.getItem('token')) {
+            window.location.href = '/login';
+        }
+
+        // Validate document ID
+        if (!documentId || documentId === 'document' || documentId.length < 10) {
+            alert('Invalid document URL');
+            window.location.href = '/dashboard';
+        }
+
+        // Initialize Socket.IO
+        console.log('Connecting to Socket.IO...');
+        const socket = socketManager.connect();
+
+        // Initialize document editor
+        let documentEditor;
+
+        // Auto-save reminder
+        window.addEventListener('beforeunload', (e) => {
+            const saveStatus = document.getElementById('saveStatus');
+            if (saveStatus && saveStatus.textContent.includes('Saving')) {
+                e.preventDefault();
+                e.returnValue = 'Changes are being saved. Are you sure you want to leave?';
+            }
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key.toLowerCase()) {
+                    case 'b':
+                        e.preventDefault();
+                        documentEditor?.formatText('bold');
+                        break;
+                    case 'i':
+                        e.preventDefault();
+                        documentEditor?.formatText('italic');
+                        break;
+                    case 'u':
+                        e.preventDefault();
+                        documentEditor?.formatText('underline');
+                        break;
+                    case 's':
+                        e.preventDefault();
+                        const content = document.getElementById('documentEditor').innerHTML;
+                        documentEditor?.saveDocument(content);
+                        break;
+                }
+            }
+        });
+
+        console.log('✅ Document editor page loaded');
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workspace - SyncSpace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <link rel="stylesheet" href="/static/css/animations.css">
+</head>
+<body class="bg-gray-50">
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b sticky top-0 z-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center gap-6">
+                    <a href="/dashboard" class="text-2xl font-bold text-blue-600">SyncSpace</a>
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                        </svg>
+                        <h1 id="workspaceName" class="text-lg font-semibold text-gray-800">Loading...</h1>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <!-- Online Users Counter -->
+                    <div class="flex items-center gap-2 bg-green-50 px-3 py-1 rounded-full">
+                        <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        <span class="text-sm text-gray-600">
+                            <span id="onlineCount" class="font-semibold text-green-700">0</span> online
+                        </span>
+                    </div>
+
+                    <!-- Settings Button -->
+                    <button id="settingsBtn" onclick="openWorkspaceSettings()" 
+                            class="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        <span class="text-sm font-medium">Settings</span>
+                    </button>
+
+                    <!-- User Info -->
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                            <span id="userInitials"></span>
+                        </div>
+                        <span id="userName" class="text-sm font-medium text-gray-700"></span>
+                    </div>
+
+                    <a href="/dashboard" class="text-sm text-blue-600 hover:text-blue-700 font-medium">← Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        
+        <!-- Tabs -->
+        <div class="bg-white rounded-lg shadow-sm mb-6">
+            <div class="border-b">
+                <nav class="flex -mb-px">
+                    <button id="tab-kanban" onclick="switchTab('kanban')" class="tab-btn px-6 py-3 border-b-2 border-blue-600 text-blue-600 font-medium">
+                        📋 Kanban Board
+                    </button>
+                    <button id="tab-chat" onclick="switchTab('chat')" class="tab-btn px-6 py-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+                        💬 Chat
+                    </button>
+                    <button id="tab-documents" onclick="switchTab('documents')" class="tab-btn px-6 py-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+                        📄 Documents
+                    </button>
+                    <button id="tab-files" onclick="switchTab('files')" class="tab-btn px-6 py-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+                        📁 Files
+                    </button>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="tab-content-wrapper">
+            
+            <!-- Kanban Board Tab -->
+            <div id="content-kanban" class="tab-content">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900">Kanban Board</h2>
+                    <button id="createTaskBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        Create Task
+                    </button>
+                </div>
+                
+                <div id="kanbanBoard" class="flex gap-4 overflow-x-auto pb-4">
+                    <!-- Kanban columns will be inserted here -->
+                </div>
+            </div>
+
+            <!-- Chat Tab -->
+            <div id="content-chat" class="tab-content hidden">
+                <div class="bg-white rounded-lg shadow-md h-[600px] flex flex-col">
+                    <div class="p-4 border-b flex items-center justify-between">
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-900">Team Chat</h2>
+                            <p class="text-sm text-gray-500">Real-time messaging with your team</p>
+                        </div>
+                        <button onclick="chatManager?.loadMessages()" class="text-gray-500 hover:text-gray-700">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+                        <!-- Messages will be inserted here -->
+                    </div>
+                    
+                    <div class="p-4 border-t bg-white">
+                        <div class="flex gap-2">
+                            <input type="text" id="messageInput" placeholder="Type a message... (use @username to mention)"
+                                   class="flex-1 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <button id="sendMessageBtn" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition flex items-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                                </svg>
+                                Send
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documents Tab -->
+            <div id="content-documents" class="tab-content hidden">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900">Documents</h2>
+                    <button id="createDocumentBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        New Document
+                    </button>
+                </div>
+                
+                <div id="documentsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Documents will be inserted here -->
+                </div>
+            </div>
+
+            <!-- Files Tab -->
+            <div id="content-files" class="tab-content hidden">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900">Files</h2>
+                    <button id="uploadFileBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                        </svg>
+                        Upload File
+                    </button>
+                </div>
+                
+                <div id="filesList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Files will be inserted here -->
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ==================== MODALS ==================== -->
+
+    <!-- Workspace Settings Modal -->
+    <div id="workspaceSettingsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <!-- Header -->
+            <div class="flex items-center justify-between p-6 border-b">
+                <h3 class="text-2xl font-bold text-gray-900">Workspace Settings</h3>
+                <button onclick="closeWorkspaceSettings()" class="text-gray-400 hover:text-gray-600 transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Tabs -->
+            <div class="border-b bg-gray-50">
+                <nav class="flex -mb-px">
+                    <button onclick="switchSettingsTab('general')" id="settings-tab-general" 
+                            class="settings-tab px-6 py-3 border-b-2 border-blue-600 text-blue-600 font-medium bg-white">
+                        General
+                    </button>
+                    <button onclick="switchSettingsTab('members')" id="settings-tab-members" 
+                            class="settings-tab px-6 py-3 border-b-2 border-transparent text-gray-600 hover:text-gray-900">
+                        Members
+                    </button>
+                    <button onclick="switchSettingsTab('danger')" id="settings-tab-danger" 
+                            class="settings-tab px-6 py-3 border-b-2 border-transparent text-gray-600 hover:text-gray-900">
+                        Danger Zone
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="flex-1 overflow-y-auto p-6">
+                
+                <!-- General Tab -->
+                <div id="settings-content-general" class="settings-content">
+                    <form id="updateWorkspaceForm" class="space-y-5">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Workspace Name</label>
+                            <input type="text" id="settingsWorkspaceName" required
+                                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+                            <textarea id="settingsDescription" rows="4" 
+                                      class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                      placeholder="Describe your workspace..."></textarea>
+                        </div>
+                        
+                        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
+                            Save Changes
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Members Tab -->
+                <div id="settings-content-members" class="settings-content hidden">
+                    <!-- Add Member Section -->
+                    <div class="mb-6 p-5 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                        <h4 class="font-bold text-lg mb-3 text-gray-900">Add New Member</h4>
+                        <form id="addMemberForm" class="space-y-3">
+                            <div class="flex gap-3">
+                                <input type="email" id="memberEmail" required placeholder="member@example.com"
+                                       class="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <select id="memberRole" class="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="member">Member</option>
+                                    <option value="admin">Admin</option>
+                                </select>
+                                <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition whitespace-nowrap flex items-center gap-2">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                    </svg>
+                                    Add
+                                </button>
+                            </div>
+                            <p class="text-xs text-gray-600">
+                                💡 Tip: Members can view and edit, Admins can manage settings
+                            </p>
+                        </form>
+                    </div>
+
+                    <!-- Members List -->
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="font-bold text-lg text-gray-900">Workspace Members</h4>
+                            <span id="memberCount" class="text-sm text-gray-600">0 members</span>
+                        </div>
+                        <div id="membersList" class="space-y-3">
+                            <!-- Members will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Danger Zone Tab -->
+                <div id="settings-content-danger" class="settings-content hidden">
+                    <div class="border-2 border-red-300 rounded-xl p-6 bg-red-50">
+                        <div class="flex items-start gap-4">
+                            <div class="flex-shrink-0">
+                                <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <h4 class="text-lg font-bold text-red-700 mb-2">Delete Workspace</h4>
+                                <p class="text-sm text-gray-700 mb-4">
+                                    Once you delete a workspace, <strong>there is no going back</strong>. All projects, tasks, documents, files, and chat history will be <strong>permanently deleted</strong>.
+                                </p>
+                                <ul class="text-sm text-gray-700 mb-4 list-disc list-inside space-y-1">
+                                    <li>All kanban boards and tasks will be deleted</li>
+                                    <li>All documents will be removed</li>
+                                    <li>All uploaded files will be deleted</li>
+                                    <li>Chat history will be lost</li>
+                                    <li>Members will lose access immediately</li>
+                                </ul>
+                                <button onclick="deleteWorkspace()" class="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition font-semibold">
+                                    Delete This Workspace Forever
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Task Modal -->
+    <div id="createTaskModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl p-6 max-w-md w-full">
+            <h3 class="text-xl font-bold mb-4">Create New Task</h3>
+            
+            <form id="createTaskForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Task Title</label>
+                    <input type="text" id="taskTitle" required
+                           class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium mb-1">Description</label>
+                    <textarea id="taskDescription" rows="3" 
+                              class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Priority</label>
+                        <select id="taskPriority" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Status</label>
+                        <select id="taskStatus" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="todo" selected>To Do</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="review">Review</option>
+                            <option value="done">Done</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">Due Date</label>
+                    <input type="date" id="taskDueDate"
+                           class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                
+                <div class="flex gap-2 justify-end mt-6">
+                    <button type="button" onclick="document.getElementById('createTaskModal').classList.add('hidden')"
+                            class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        Create Task
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Create Document Modal -->
+    <div id="createDocumentModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl p-6 max-w-md w-full">
+            <h3 class="text-xl font-bold mb-4">Create New Document</h3>
+            
+            <form id="createDocumentForm">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1">Document Title</label>
+                    <input type="text" id="documentTitle" required
+                           class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="e.g., Project Proposal">
+                </div>
+                
+                <div class="flex gap-2 justify-end mt-6">
+                    <button type="button" onclick="closeCreateDocumentModal()"
+                            class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        Create Document
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Upload File Modal -->
+    <div id="uploadFileModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl p-6 max-w-md w-full">
+            <h3 class="text-xl font-bold mb-4">Upload File</h3>
+            
+            <form id="uploadFileForm">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1">Select File</label>
+                    <input type="file" id="fileInput" required
+                           class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <p class="text-xs text-gray-500 mt-1">Max file size: 16MB</p>
+                </div>
+                
+                <div class="flex gap-2 justify-end mt-6">
+                    <button type="button" onclick="closeUploadFileModal()"
+                            class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        Upload File
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/static/js/socket-client.js"></script>
+    <script src="/static/js/utils.js"></script>
+    <script src="/static/js/chat.js"></script>
+    <script src="/static/js/kanban.js"></script>
+    <script src="/static/js/notifications.js"></script>
+
+       <script>
+        // Get workspace ID from URL
+        const pathParts = window.location.pathname.split('/');
+        const workspaceId = pathParts[pathParts.length - 1];
+        
+        console.log('Workspace ID:', workspaceId);
+        
+        // Validate workspace ID
+        if (!workspaceId || workspaceId === 'workspace' || workspaceId.length < 10) {
+            alert('Invalid workspace URL');
+            window.location.href = '/dashboard';
+        }
+
+        const user = getCurrentUser();
+
+        // Check authentication
+        if (!localStorage.getItem('token')) {
+            window.location.href = '/login';
+        }
+
+        // Display user info
+        document.getElementById('userName').textContent = user.name || 'User';
+        document.getElementById('userInitials').textContent = getInitials(user.name);
+
+        // Initialize Socket.IO and join workspace
+        console.log('Connecting to Socket.IO...');
+        const socket = socketManager.connect();
+        
+        socket.emit('join_workspace', {
+            workspace_id: workspaceId,
+            username: user.name,
+            user_id: user.id
+        });
+
+        console.log('Joined workspace:', workspaceId);
+
+        // Track online users
+        socket.on('user_presence', (data) => {
+            document.getElementById('onlineCount').textContent = data.online_count || 0;
+        });
+
+        // Initialize managers
+        let chatManager, kanbanManager;
+
+        // ==================== DOCUMENTS FUNCTIONS ====================
+
+        async function loadDocuments() {
+            try {
+                const response = await fetch(`/api/document/workspace/${workspaceId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const documents = await response.json();
+                    displayDocuments(documents);
+                }
+            } catch (error) {
+                console.error('Error loading documents:', error);
+            }
+        }
+
+        function displayDocuments(documents) {
+            const container = document.getElementById('documentsList');
+            if (!container) return;
+            
+            if (documents.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-12">
+                        <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <p class="text-gray-500 mb-4">No documents yet</p>
+                        <button onclick="document.getElementById('createDocumentBtn').click()" class="text-blue-600 hover:underline">
+                            Create your first document
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = documents.map(doc => `
+                <div class="bg-white rounded-lg shadow hover:shadow-lg transition cursor-pointer p-5 border border-gray-200" onclick="window.location.href='/document/${doc._id}'">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="bg-blue-100 rounded-lg p-3">
+                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-bold text-gray-900">${escapeHtml(doc.title)}</h3>
+                            <p class="text-xs text-gray-500">Updated ${formatRelativeTime(doc.updated_at)}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between text-xs text-gray-500">
+                        <span>📄 Document</span>
+                        <span class="text-blue-600 font-medium">Open →</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ==================== FILES FUNCTIONS ====================
+
+        async function loadFiles() {
+            try {
+                const response = await fetch(`/api/files/${workspaceId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const files = await response.json();
+                    displayFiles(files);
+                }
+            } catch (error) {
+                console.error('Error loading files:', error);
+            }
+        }
+
+        function displayFiles(files) {
+            const container = document.getElementById('filesList');
+            if (!container) return;
+            
+            if (files.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-12">
+                        <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                        </svg>
+                        <p class="text-gray-500 mb-4">No files yet</p>
+                        <button onclick="document.getElementById('uploadFileBtn').click()" class="text-blue-600 hover:underline">
+                            Upload your first file
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = files.map(file => `
+                <div class="bg-white rounded-lg shadow hover:shadow-lg transition p-5 border border-gray-200">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="bg-green-100 rounded-lg p-3">
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h3 class="font-semibold text-gray-900 truncate">${escapeHtml(file.name)}</h3>
+                            <p class="text-xs text-gray-500">${formatFileSize(file.size)}</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <a href="${file.url}" target="_blank" download class="flex-1 text-center bg-blue-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-blue-700 transition">
+                            Download
+                        </a>
+                        <button onclick="deleteFile('${file._id}')" class="px-3 py-2 bg-red-100 text-red-600 rounded-lg text-sm hover:bg-red-200 transition">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function deleteFile(fileId) {
+            if (!confirm('Delete this file?')) return;
+
+            try {
+                const response = await fetch(`/api/files/${fileId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    showToast('File deleted successfully', 'success');
+                    loadFiles();
+                } else {
+                    showToast('Failed to delete file', 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting file:', error);
+                showToast('Failed to delete file', 'error');
+            }
+        }
+
+        // ==================== WORKSPACE FUNCTIONS ====================
+
+        async function loadWorkspace() {
+            try {
+                console.log('Loading workspace:', workspaceId);
+                
+                const response = await fetch(`/api/workspace/${workspaceId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const workspace = await response.json();
+                    console.log('Workspace loaded:', workspace);
+                    
+                    document.getElementById('workspaceName').textContent = workspace.name || 'Workspace';
+                    document.getElementById('settingsWorkspaceName').value = workspace.name || '';
+                    document.getElementById('settingsDescription').value = workspace.description || '';
+                } else {
+                    const error = await response.json();
+                    console.error('Failed to load workspace:', error);
+                    showToast('Failed to load workspace', 'error');
+                }
+            } catch (error) {
+                console.error('Error loading workspace:', error);
+                showToast('Error loading workspace', 'error');
+            }
+        }
+
+        // Initialize workspace components
+        async function initializeWorkspace() {
+            console.log('Initializing workspace components...');
+            
+            await loadWorkspace();
+            
+            // Initialize chat manager
+            try {
+                chatManager = new ChatManager(workspaceId);
+                console.log('✅ Chat manager initialized');
+            } catch (error) {
+                console.error('Failed to initialize chat:', error);
+            }
+            
+            // Initialize kanban manager
+            try {
+                kanbanManager = new KanbanManager(workspaceId);
+                console.log('✅ Kanban manager initialized');
+            } catch (error) {
+                console.error('Failed to initialize kanban:', error);
+            }
+            
+            // Load documents and files
+            loadDocuments();
+            loadFiles();
+        }
+
+        // ==================== TAB SWITCHING ====================
+        function switchTab(tabName) {
+            console.log('Switching to tab:', tabName);
+            
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-blue-600', 'text-blue-600');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            });
+            
+            // Show selected tab
+            const tabContent = document.getElementById(`content-${tabName}`);
+            if (tabContent) {
+                tabContent.classList.remove('hidden');
+            }
+            
+            // Add active class to selected button
+            const activeBtn = document.getElementById(`tab-${tabName}`);
+            if (activeBtn) {
+                activeBtn.classList.add('border-blue-600', 'text-blue-600');
+                activeBtn.classList.remove('border-transparent', 'text-gray-500');
+            }
+        }
+
+        // ==================== WORKSPACE SETTINGS ====================
+        
+        function openWorkspaceSettings() {
+            document.getElementById('workspaceSettingsModal').classList.remove('hidden');
+            switchSettingsTab('general');
+            loadMembers();
+        }
+
+        function closeWorkspaceSettings() {
+            document.getElementById('workspaceSettingsModal').classList.add('hidden');
+        }
+
+        function switchSettingsTab(tabName) {
+            // Hide all contents
+            document.querySelectorAll('.settings-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.settings-tab').forEach(tab => {
+                tab.classList.remove('border-blue-600', 'text-blue-600', 'bg-white');
+                tab.classList.add('border-transparent', 'text-gray-600');
+            });
+            
+            // Show selected content
+            document.getElementById(`settings-content-${tabName}`).classList.remove('hidden');
+            
+            // Add active class to selected tab
+            const activeTab = document.getElementById(`settings-tab-${tabName}`);
+            activeTab.classList.add('border-blue-600', 'text-blue-600', 'bg-white');
+            activeTab.classList.remove('border-transparent', 'text-gray-600');
+
+            // Load members if switching to members tab
+            if (tabName === 'members') {
+                loadMembers();
+            }
+        }
+
+        // Update workspace
+        document.getElementById('updateWorkspaceForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('settingsWorkspaceName').value;
+            const description = document.getElementById('settingsDescription').value;
+
+            try {
+                const response = await fetch(`/api/workspace/${workspaceId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name, description })
+                });
+
+                if (response.ok) {
+                    showToast('Workspace updated successfully', 'success');
+                    document.getElementById('workspaceName').textContent = name;
+                    closeWorkspaceSettings();
+                } else {
+                    showToast('Failed to update workspace', 'error');
+                }
+            } catch (error) {
+                console.error('Error updating workspace:', error);
+                showToast('Error updating workspace', 'error');
+            }
+        });
+
+        // ==================== MEMBER MANAGEMENT ====================
+
+        // Add member
+        document.getElementById('addMemberForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('memberEmail').value;
+            const role = document.getElementById('memberRole').value;
+
+            try {
+                const response = await fetch(`/api/workspace/${workspaceId}/members`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, role })
+                });
+
+                if (response.ok) {
+                    showToast('Member added successfully', 'success');
+                    document.getElementById('addMemberForm').reset();
+                    loadMembers();
+                } else {
+                    const error = await response.json();
+                    showToast(error.error || 'Failed to add member', 'error');
+                }
+            } catch (error) {
+                console.error('Error adding member:', error);
+                showToast('Error adding member', 'error');
+            }
+        });
+
+        // Load members
+        async function loadMembers() {
+            try {
+                const response = await fetch(`/api/workspace/${workspaceId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const workspace = await response.json();
+                    displayMembers(workspace.members || []);
+                }
+            } catch (error) {
+                console.error('Error loading members:', error);
+            }
+        }
+
+        function displayMembers(members) {
+            const container = document.getElementById('membersList');
+            const countElement = document.getElementById('memberCount');
+            if (!container) return;
+
+            if (countElement) {
+                countElement.textContent = `${members.length} member${members.length !== 1 ? 's' : ''}`;
+            }
+
+            if (members.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12">
+                        <div class="w-20 h-20 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                            <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                        </div>
+                        <p class="text-gray-500 font-medium mb-2">No members yet</p>
+                        <p class="text-xs text-gray-400">Add team members to collaborate</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = members.map((member, index) => {
+                const roleColors = {
+                    owner: 'bg-gradient-to-r from-purple-500 to-pink-500 text-white',
+                    admin: 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white',
+                    member: 'bg-gray-200 text-gray-700'
+                };
+
+                const roleIcons = {
+                    owner: '👑',
+                    admin: '⭐',
+                    member: '👤'
+                };
+                
+                const displayName = member.name || member.email || member.user_id;
+                const displayEmail = member.email || 'No email';
+                
+                return `
+                    <div class="group relative flex items-center justify-between p-5 bg-gradient-to-r from-white to-gray-50 border-2 border-gray-200 rounded-xl hover:shadow-lg hover:border-blue-300 transition-all duration-300">
+                        <div class="flex items-center gap-4 flex-1">
+                            <!-- Avatar with number badge -->
+                            <div class="relative">
+                                <div class="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 text-white flex items-center justify-center font-bold text-xl shadow-lg">
+                                    ${getInitials(displayName)}
+                                </div>
+                                <div class="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full border-2 border-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">
+                                    ${index + 1}
+                                </div>
+                            </div>
+                            
+                            <!-- Member Info -->
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <p class="font-bold text-gray-900 truncate text-lg">${escapeHtml(displayName)}</p>
+                                    <span class="px-2 py-0.5 text-xs font-bold rounded-full ${roleColors[member.role] || roleColors.member}">
+                                        ${roleIcons[member.role] || '👤'} ${escapeHtml(member.role).toUpperCase()}
+                                    </span>
+                                </div>
+                                <p class="text-sm text-gray-500 truncate">${escapeHtml(displayEmail)}</p>
+                                <p class="text-xs text-gray-400 mt-1">
+                                    Joined ${formatRelativeTime(member.joined_at || new Date())}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        ${member.role !== 'owner' ? `
+                            <button onclick="removeMember('${member.user_id}')" 
+                                    class="opacity-0 group-hover:opacity-100 text-red-600 hover:text-white hover:bg-red-600 px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 font-medium shadow-sm">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                                Remove
+                            </button>
+                        ` : `
+                            <div class="flex items-center gap-2 bg-gradient-to-r from-purple-100 to-pink-100 px-4 py-2 rounded-lg">
+                                <span class="text-2xl">👑</span>
+                                <span class="text-sm font-bold text-purple-700">Workspace Owner</span>
+                            </div>
+                        `}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Remove member
+        async function removeMember(userId) {
+            if (!confirm('Remove this member from the workspace? They will lose access immediately.')) return;
+
+            try {
+                const response = await fetch(`/api/workspace/${workspaceId}/members/${userId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    showToast('Member removed successfully', 'success');
+                    loadMembers();
+                } else {
+                    showToast('Failed to remove member', 'error');
+                }
+            } catch (error) {
+                console.error('Error removing member:', error);
+                showToast('Error removing member', 'error');
+            }
+        }
+
+        // Delete workspace
+        async function deleteWorkspace() {
+            const confirmation = prompt('⚠️ Type "DELETE" to confirm workspace deletion:');
+            
+            if (confirmation !== 'DELETE') {
+                showToast('Deletion cancelled', 'info');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/workspace/${workspaceId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    showToast('Workspace deleted successfully', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 1000);
+                } else {
+                    showToast('Failed to delete workspace', 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting workspace:', error);
+                showToast('Error deleting workspace', 'error');
+            }
+        }
+
+        // ==================== MODAL FUNCTIONS ====================
+
+        document.getElementById('createDocumentBtn')?.addEventListener('click', () => {
+            document.getElementById('createDocumentModal').classList.remove('hidden');
+        });
+
+        function closeCreateDocumentModal() {
+            document.getElementById('createDocumentModal').classList.add('hidden');
+            document.getElementById('createDocumentForm').reset();
+        }
+
+        document.getElementById('createDocumentForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const title = document.getElementById('documentTitle').value;
+
+            try {
+                const response = await fetch('/api/document/create', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        title,
+                        workspace_id: workspaceId
+                    })
+                });
+
+                if (response.ok) {
+                    const doc = await response.json();
+                    closeCreateDocumentModal();
+                    window.location.href = `/document/${doc._id}`;
+                } else {
+                    showToast('Failed to create document', 'error');
+                }
+            } catch (error) {
+                console.error('Error creating document:', error);
+                showToast('Error creating document', 'error');
+            }
+        });
+
+        // File upload modal functions
+        document.getElementById('uploadFileBtn')?.addEventListener('click', () => {
+            document.getElementById('uploadFileModal').classList.remove('hidden');
+        });
+
+        function closeUploadFileModal() {
+            document.getElementById('uploadFileModal').classList.add('hidden');
+            document.getElementById('uploadFileForm').reset();
+        }
+
+        document.getElementById('uploadFileForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                showToast('Please select a file', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('workspace_id', workspaceId);
+
+            try {
+                showLoading(true);
+                
+                const response = await fetch('/api/files/upload', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: formData
+                });
+
+                if (response.ok) {
+                    closeUploadFileModal();
+                    showToast('File uploaded successfully', 'success');
+                    loadFiles();
+                } else {
+                    showToast('Failed to upload file', 'error');
+                }
+            } catch (error) {
+                console.error('Error uploading file:', error);
+                showToast('Error uploading file', 'error');
+            } finally {
+                showLoading(false);
+            }
+        });
+
+        // Close modals on outside click
+        ['createTaskModal', 'createDocumentModal', 'uploadFileModal', 'workspaceSettingsModal'].forEach(modalId => {
+            document.getElementById(modalId)?.addEventListener('click', (e) => {
+                if (e.target.id === modalId) {
+                    document.getElementById(modalId).classList.add('hidden');
+                }
+            });
+        });
+
+        // Initialize workspace
+        initializeWorkspace();
+    </script>
+
+
+</body>
+</html>

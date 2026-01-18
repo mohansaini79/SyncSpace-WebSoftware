@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - SyncSpace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/css/animations.css">
+</head>
+<body class="bg-gray-50">
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b sticky top-0 z-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/dashboard" class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">SyncSpace</a>
+                    <div class="ml-10 flex items-center gap-6">
+                        <a href="/dashboard" class="text-blue-600 font-medium border-b-2 border-blue-600 pb-1">Dashboard</a>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <!-- Notification Bell -->
+                    <div class="relative">
+                        <button id="notificationBtn" class="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                            </svg>
+                            <span id="notificationBadge" class="hidden absolute top-1 right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs notification-badge-pulse">
+                                <span id="notificationCount">0</span>
+                            </span>
+                        </button>
+                        
+                        <!-- Notification Dropdown -->
+                        <div id="notificationDropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl z-50 border">
+                            <div class="p-4 border-b flex items-center justify-between">
+                                <h3 class="font-semibold">Notifications</h3>
+                                <button id="clearNotificationsBtn" class="text-xs text-blue-600 hover:underline">Clear all</button>
+                            </div>
+                            <div id="notificationsList" class="max-h-96 overflow-y-auto">
+                                <!-- Notifications will be inserted here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User Menu Dropdown -->
+                    <div class="relative">
+                        <button id="userMenuBtn" class="flex items-center gap-3 hover:bg-gray-100 rounded-lg px-3 py-2 transition">
+                            <div class="w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                                <span id="userInitials"></span>
+                            </div>
+                            <div class="text-left">
+                                <p id="userName" class="text-sm font-semibold text-gray-700"></p>
+                                <p id="userEmail" class="text-xs text-gray-500"></p>
+                            </div>
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+
+                        <!-- User Dropdown Menu -->
+                        <div id="userDropdown" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl z-50 border">
+                            <div class="p-2">
+                                <a href="/dashboard" class="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-lg transition">
+                                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                                    </svg>
+                                    <span class="text-sm">Dashboard</span>
+                                </a>
+                                <button class="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-lg transition">
+                                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    </svg>
+                                    <span class="text-sm">Settings</span>
+                                </button>
+                            </div>
+                            <div class="border-t p-2">
+                                <button onclick="logoutUser()" class="w-full flex items-center gap-3 px-4 py-2 hover:bg-red-50 rounded-lg transition text-red-600">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                                    </svg>
+                                    <span class="text-sm font-medium">Logout</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Welcome Section -->
+        <div class="mb-8">
+            <h1 class="text-4xl font-bold text-gray-900 mb-2">Welcome back, <span id="welcomeName" class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"></span>! 👋</h1>
+            <p class="text-gray-600">Here's what's happening with your projects today.</p>
+        </div>
+
+        <!-- Loading State -->
+        <div id="dashboardLoader" class="hidden text-center py-16">
+            <div class="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600"></div>
+            <p class="text-gray-600 mt-4 text-lg">Loading dashboard...</p>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 animate-fade-in">
+            <!-- Total Workspaces -->
+            <div class="stat-card bg-white rounded-xl shadow-md p-6 border border-gray-100 hover:shadow-xl transition-all duration-300">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm font-semibold uppercase tracking-wide">Workspaces</p>
+                        <p id="totalWorkspaces" class="text-4xl font-bold text-gray-900 mt-2">0</p>
+                        <p class="text-xs text-green-600 mt-1">↑ Active</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-blue-100 to-blue-200 rounded-2xl p-4">
+                        <svg class="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Projects -->
+            <div class="stat-card bg-white rounded-xl shadow-md p-6 border border-gray-100 hover:shadow-xl transition-all duration-300">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm font-semibold uppercase tracking-wide">Projects</p>
+                        <p id="totalProjects" class="text-4xl font-bold text-gray-900 mt-2">0</p>
+                        <p class="text-xs text-blue-600 mt-1">In progress</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-purple-100 to-purple-200 rounded-2xl p-4">
+                        <svg class="w-10 h-10 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Tasks -->
+            <div class="stat-card bg-white rounded-xl shadow-md p-6 border border-gray-100 hover:shadow-xl transition-all duration-300">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm font-semibold uppercase tracking-wide">Total Tasks</p>
+                        <p id="totalTasks" class="text-4xl font-bold text-gray-900 mt-2">0</p>
+                        <p class="text-xs text-yellow-600 mt-1">Assigned to you</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-2xl p-4">
+                        <svg class="w-10 h-10 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Completed Tasks -->
+            <div class="stat-card bg-white rounded-xl shadow-md p-6 border border-gray-100 hover:shadow-xl transition-all duration-300">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm font-semibold uppercase tracking-wide">Completed</p>
+                        <p id="completedTasks" class="text-4xl font-bold text-gray-900 mt-2">0</p>
+                        <p class="text-xs text-green-600 mt-1">✓ Done</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-green-100 to-green-200 rounded-2xl p-4">
+                        <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Workspaces Section -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="bg-white rounded-xl shadow-md border border-gray-100">
+                    <div class="p-6 border-b flex items-center justify-between">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-900">My Workspaces</h2>
+                            <p class="text-sm text-gray-500 mt-1">Collaborate with your team</p>
+                        </div>
+                        <button id="createWorkspaceBtn" class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-5 py-2.5 rounded-lg hover:from-blue-700 hover:to-purple-700 transition text-sm font-semibold flex items-center gap-2 shadow-lg">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            New Workspace
+                        </button>
+                    </div>
+                    <div id="workspacesContainer" class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Workspaces will be inserted here -->
+                    </div>
+                </div>
+
+                <!-- Recent Projects -->
+                <div class="bg-white rounded-xl shadow-md border border-gray-100">
+                    <div class="p-6 border-b">
+                        <h2 class="text-2xl font-bold text-gray-900">Recent Projects</h2>
+                    </div>
+                    <div id="projectsContainer" class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Projects will be inserted here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="space-y-6">
+                
+                <!-- My Tasks -->
+                <div class="bg-white rounded-xl shadow-md border border-gray-100">
+                    <div class="p-6 border-b">
+                        <h2 class="text-xl font-bold text-gray-900">My Tasks</h2>
+                        <p class="text-xs text-gray-500 mt-1">Tasks assigned to you</p>
+                    </div>
+                    <div id="tasksContainer" class="p-4 space-y-3 max-h-[600px] overflow-y-auto">
+                        <!-- Tasks will be inserted here -->
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl shadow-md p-6 border border-blue-100">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                        Quick Actions
+                    </h3>
+                    <div class="space-y-3">
+                        <button onclick="document.getElementById('createWorkspaceModal').classList.remove('hidden')" 
+                                class="w-full text-left px-4 py-3 bg-white hover:bg-blue-50 rounded-lg transition flex items-center gap-3 shadow-sm">
+                            <div class="bg-blue-100 rounded-lg p-2">
+                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                </svg>
+                            </div>
+                            <span class="text-sm font-semibold text-gray-900">Create Workspace</span>
+                        </button>
+                        
+                        <button id="refreshDashboard" 
+                                class="w-full text-left px-4 py-3 bg-white hover:bg-gray-50 rounded-lg transition flex items-center gap-3 shadow-sm">
+                            <div class="bg-gray-100 rounded-lg p-2">
+                                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                </svg>
+                            </div>
+                            <span class="text-sm font-semibold text-gray-900">Refresh Dashboard</span>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Create Workspace Modal -->
+    <div id="createWorkspaceModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl p-6 max-w-md w-full animate-fade-in">
+            <h3 class="text-2xl font-bold mb-4">Create New Workspace</h3>
+            
+            <form id="createWorkspaceForm">
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold mb-2">Workspace Name</label>
+                    <input type="text" id="workspaceName" required
+                           class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="e.g., Marketing Team">
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold mb-2">Description</label>
+                    <textarea id="workspaceDescription" rows="3" 
+                              class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="What's this workspace for?"></textarea>
+                </div>
+                
+                <div class="flex gap-3 justify-end">
+                    <button type="button" onclick="closeCreateWorkspaceModal()"
+                            class="px-5 py-2.5 text-gray-700 hover:bg-gray-100 rounded-lg transition font-medium">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition font-semibold">
+                        Create Workspace
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/static/js/socket-client.js"></script>
+    <script src="/static/js/utils.js"></script>
+    <script src="/static/js/notifications.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+
+    <script>
+        const user = getCurrentUser();
+
+        // Check authentication
+        if (!localStorage.getItem('token')) {
+            window.location.href = '/login';
+        }
+
+        // Display user info
+        document.getElementById('userName').textContent = user.name;
+        document.getElementById('userEmail').textContent = user.email;
+        document.getElementById('welcomeName').textContent = user.name;
+        document.getElementById('userInitials').textContent = getInitials(user.name);
+
+        // Toggle user dropdown
+        document.getElementById('userMenuBtn')?.addEventListener('click', () => {
+            document.getElementById('userDropdown').classList.toggle('hidden');
+        });
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#userMenuBtn') && !e.target.closest('#userDropdown')) {
+                document.getElementById('userDropdown')?.classList.add('hidden');
+            }
+            if (!e.target.closest('#notificationBtn') && !e.target.closest('#notificationDropdown')) {
+                document.getElementById('notificationDropdown')?.classList.add('hidden');
+            }
+        });
+
+        // Toggle notification dropdown
+        document.getElementById('notificationBtn')?.addEventListener('click', () => {
+            document.getElementById('notificationDropdown').classList.toggle('hidden');
+        });
+
+        function closeCreateWorkspaceModal() {
+            document.getElementById('createWorkspaceModal').classList.add('hidden');
+            document.getElementById('createWorkspaceForm').reset();
+        }
+
+        // Handle create workspace form
+        document.getElementById('createWorkspaceForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('workspaceName').value;
+            const description = document.getElementById('workspaceDescription').value;
+
+            try {
+                const response = await fetch('/api/workspace/create', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name, description })
+                });
+
+                if (response.ok) {
+                    const workspace = await response.json();
+                    closeCreateWorkspaceModal();
+                    showToast('Workspace created successfully!', 'success');
+                    window.location.href = `/workspace/${workspace._id}`;
+                } else {
+                    showToast('Failed to create workspace', 'error');
+                }
+            } catch (error) {
+                console.error('Error creating workspace:', error);
+                showToast('Error creating workspace', 'error');
+            }
+        });
+
+        // Close modal when clicking outside
+        document.getElementById('createWorkspaceModal').addEventListener('click', (e) => {
+            if (e.target.id === 'createWorkspaceModal') {
+                closeCreateWorkspaceModal();
+            }
+        });
+    </script>
+
+</body>
+</html>
