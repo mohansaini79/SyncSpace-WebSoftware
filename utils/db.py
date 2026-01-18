@@ -4,10 +4,8 @@ import os
 import time
 from dotenv import load_dotenv
 
-
 # Load environment variables
 load_dotenv()
-
 
 # Global database connection
 _db = None
@@ -17,14 +15,6 @@ _client = None
 def init_db(mongo_uri=None, max_retries=3, retry_delay=2):
     """
     Initialize database connection with retry logic
-    
-    Args:
-        mongo_uri: MongoDB connection string
-        max_retries: Number of connection attempts
-        retry_delay: Seconds to wait between retries
-    
-    Returns:
-        MongoDB database instance
     """
     global _db, _client
     
@@ -35,50 +25,11 @@ def init_db(mongo_uri=None, max_retries=3, retry_delay=2):
     if mongo_uri is None:
         mongo_uri = os.getenv('MONGO_URI', 'mongodb://localhost:27017/syncspace')
     
-    # FIXED: Extract database name from URI
-    db_name = 'syncspace'  # Default database name
+    # SIMPLIFIED FIX: Just use 'syncspace' as database name
+    # Don't try to parse it from URI - it's unreliable
+    db_name = 'syncspace'
     
-    try:
-        # Parse MongoDB URI to extract database name
-        if 'mongodb+srv://' in mongo_uri:
-            uri_without_protocol = mongo_uri.replace('mongodb+srv://', '')
-        elif 'mongodb://' in mongo_uri:
-            uri_without_protocol = mongo_uri.replace('mongodb://', '')
-        else:
-            uri_without_protocol = mongo_uri
-        
-        # Remove credentials (everything before @)
-        if '@' in uri_without_protocol:
-            uri_without_credentials = uri_without_protocol.split('@', 1)[1]
-        else:
-            uri_without_credentials = uri_without_protocol
-        
-        # Extract database name (between first / and ?)
-        if '/' in uri_without_credentials:
-            # Get everything after the first /
-            path_part = uri_without_credentials.split('/', 1)[1]
-            
-            # Remove query parameters (everything after ?)
-            if '?' in path_part:
-                extracted_name = path_part.split('?')[0]
-            else:
-                extracted_name = path_part
-            
-            # Clean up the database name
-            extracted_name = extracted_name.strip().strip('/')
-            
-            # Validate: ensure no dots and not empty
-            if extracted_name and '.' not in extracted_name and extracted_name != '':
-                db_name = extracted_name
-            else:
-                print(f"⚠️ Invalid database name '{extracted_name}', using default 'syncspace'")
-                db_name = 'syncspace'
-        
-        print(f"📂 Using database: {db_name}")
-        
-    except Exception as e:
-        print(f"⚠️ Error parsing database name: {e}, using default 'syncspace'")
-        db_name = 'syncspace'
+    print(f"📂 Using database: {db_name}")
     
     # Connection with retry logic
     for attempt in range(max_retries):
@@ -88,28 +39,28 @@ def init_db(mongo_uri=None, max_retries=3, retry_delay=2):
             # Create MongoDB client with production-ready settings
             _client = MongoClient(
                 mongo_uri,
-                serverSelectionTimeoutMS=10000,  # 10 seconds timeout
-                connectTimeoutMS=10000,           # 10 seconds connect timeout
-                socketTimeoutMS=10000,            # 10 seconds socket timeout
-                maxPoolSize=50,                   # Connection pool size
-                minPoolSize=10,                   # Minimum connections
-                retryWrites=True,                 # Retry failed writes
-                retryReads=True,                  # Retry failed reads
-                w='majority',                     # Write concern
-                journal=True                      # Journal writes
+                serverSelectionTimeoutMS=10000,
+                connectTimeoutMS=10000,
+                socketTimeoutMS=10000,
+                maxPoolSize=50,
+                minPoolSize=10,
+                retryWrites=True,
+                retryReads=True,
+                w='majority',
+                journal=True
             )
             
             # Test connection
             _client.admin.command('ping')
             
-            # Get database instance
+            # Get database instance - ALWAYS use 'syncspace'
             _db = _client[db_name]
             
             print(f"✅ MongoDB connected successfully!")
             print(f"📂 Database: {db_name}")
             print(f"🌍 Server: MongoDB Atlas")
             
-            # Create indexes for performance (optional but recommended)
+            # Create indexes for performance
             try:
                 create_indexes()
             except Exception as idx_error:
@@ -138,12 +89,7 @@ def init_db(mongo_uri=None, max_retries=3, retry_delay=2):
 
 
 def get_db():
-    """
-    Get database instance (lazy initialization)
-    
-    Returns:
-        MongoDB database instance
-    """
+    """Get database instance (lazy initialization)"""
     global _db
     
     if _db is None:
@@ -157,9 +103,7 @@ def get_db():
 
 
 def close_db():
-    """
-    Close database connection gracefully
-    """
+    """Close database connection gracefully"""
     global _db, _client
     
     if _client is not None:
@@ -173,12 +117,7 @@ def close_db():
 
 
 def check_connection():
-    """
-    Check if database connection is alive
-    
-    Returns:
-        bool: True if connected, False otherwise
-    """
+    """Check if database connection is alive"""
     global _client
     
     if _client is None:
@@ -192,12 +131,7 @@ def check_connection():
 
 
 def reconnect():
-    """
-    Reconnect to database
-    
-    Returns:
-        MongoDB database instance
-    """
+    """Reconnect to database"""
     global _db, _client
     
     print("🔄 Reconnecting to database...")
@@ -208,9 +142,7 @@ def reconnect():
 
 
 def create_indexes():
-    """
-    Create database indexes for performance optimization
-    """
+    """Create database indexes for performance optimization"""
     global _db
     
     if _db is None:
@@ -258,12 +190,7 @@ def create_indexes():
 
 
 def get_stats():
-    """
-    Get database statistics
-    
-    Returns:
-        dict: Database statistics
-    """
+    """Get database statistics"""
     global _db, _client
     
     if _db is None or _client is None:
