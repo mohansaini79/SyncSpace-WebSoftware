@@ -4,8 +4,10 @@ import os
 import time
 from dotenv import load_dotenv
 
+
 # Load environment variables
 load_dotenv()
+
 
 # Global database connection
 _db = None
@@ -33,20 +35,49 @@ def init_db(mongo_uri=None, max_retries=3, retry_delay=2):
     if mongo_uri is None:
         mongo_uri = os.getenv('MONGO_URI', 'mongodb://localhost:27017/syncspace')
     
-    # Extract database name from URI
+    # FIXED: Extract database name from URI
+    db_name = 'syncspace'  # Default database name
+    
     try:
-        if 'mongodb+srv://' in mongo_uri or 'mongodb://' in mongo_uri:
-            # Split by '?' to remove query parameters, then get last part
-            uri_path = mongo_uri.split('?')[0].rstrip('/')
-            if '/' in uri_path:
-                db_name = uri_path.split('/')[-1]
-                if not db_name or db_name in ['', 'mongodb:', 'mongodb+srv:']:
-                    db_name = 'syncspace'
-            else:
-                db_name = 'syncspace'
+        # Parse MongoDB URI to extract database name
+        if 'mongodb+srv://' in mongo_uri:
+            uri_without_protocol = mongo_uri.replace('mongodb+srv://', '')
+        elif 'mongodb://' in mongo_uri:
+            uri_without_protocol = mongo_uri.replace('mongodb://', '')
         else:
-            db_name = 'syncspace'
-    except Exception:
+            uri_without_protocol = mongo_uri
+        
+        # Remove credentials (everything before @)
+        if '@' in uri_without_protocol:
+            uri_without_credentials = uri_without_protocol.split('@', 1)[1]
+        else:
+            uri_without_credentials = uri_without_protocol
+        
+        # Extract database name (between first / and ?)
+        if '/' in uri_without_credentials:
+            # Get everything after the first /
+            path_part = uri_without_credentials.split('/', 1)[1]
+            
+            # Remove query parameters (everything after ?)
+            if '?' in path_part:
+                extracted_name = path_part.split('?')[0]
+            else:
+                extracted_name = path_part
+            
+            # Clean up the database name
+            extracted_name = extracted_name.strip().strip('/')
+            
+            # Validate: ensure no dots and not empty
+            if extracted_name and '.' not in extracted_name and extracted_name != '':
+                db_name = extracted_name
+            else:
+                print(f"⚠️ Invalid database name '{extracted_name}', using default 'syncspace'")
+                db_name = 'syncspace'
+        
+        print(f"📂 Using database: {db_name}")
+        
+    except Exception as e:
+        print(f"⚠️ Error parsing database name: {e}, using default 'syncspace'")
         db_name = 'syncspace'
     
     # Connection with retry logic
@@ -76,7 +107,7 @@ def init_db(mongo_uri=None, max_retries=3, retry_delay=2):
             
             print(f"✅ MongoDB connected successfully!")
             print(f"📂 Database: {db_name}")
-            print(f"🌍 Server: {_client.address if hasattr(_client, 'address') else 'Connected'}")
+            print(f"🌍 Server: MongoDB Atlas")
             
             # Create indexes for performance (optional but recommended)
             try:
