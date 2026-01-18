@@ -6,6 +6,43 @@
     <title>SyncSpace - Real-time Collaboration Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/static/css/animations.css">
+    <style>
+        .feature-preview {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .feature-preview::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 3s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        .chat-bubble {
+            animation: slideUp 0.5s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
 </head>
 <body class="bg-gradient-to-br from-blue-50 to-indigo-100">
 
@@ -47,12 +84,80 @@
                 </div>
             </div>
 
-            <!-- Hero Image/Animation -->
+            <!-- Hero Feature Previews (UPDATED WITH CONTENT) -->
             <div class="mt-16 bg-white rounded-2xl shadow-2xl p-8 animate-fade-in">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg p-6 h-64"></div>
-                    <div class="bg-gradient-to-br from-purple-100 to-purple-200 rounded-lg p-6 h-64"></div>
-                    <div class="bg-gradient-to-br from-green-100 to-green-200 rounded-lg p-6 h-64"></div>
+                    
+                    <!-- Preview 1: Real-time Chat -->
+                    <div class="bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg p-6 h-64 feature-preview flex flex-col justify-between">
+                        <div class="text-center">
+                            <div class="text-5xl mb-3">💬</div>
+                            <h3 class="text-lg font-bold text-blue-800">Real-time Chat</h3>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="chat-bubble bg-white/80 backdrop-blur-sm rounded-lg p-3 text-sm text-gray-700">
+                                <strong>John:</strong> Let's collaborate! 🚀
+                            </div>
+                            <div class="chat-bubble bg-blue-600 text-white rounded-lg p-3 text-sm ml-8" style="animation-delay: 0.2s">
+                                <strong>You:</strong> Great idea!
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Preview 2: Task Management -->
+                    <div class="bg-gradient-to-br from-purple-100 to-purple-200 rounded-lg p-6 h-64 feature-preview flex flex-col justify-between">
+                        <div class="text-center">
+                            <div class="text-5xl mb-3">✅</div>
+                            <h3 class="text-lg font-bold text-purple-800">Task Management</h3>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="bg-white/80 backdrop-blur-sm rounded-lg p-3 flex items-center gap-2">
+                                <input type="checkbox" checked class="w-5 h-5 text-purple-600 rounded">
+                                <span class="text-sm text-gray-700">Design mockups ✓</span>
+                            </div>
+                            <div class="bg-white/80 backdrop-blur-sm rounded-lg p-3 flex items-center gap-2">
+                                <input type="checkbox" class="w-5 h-5 text-purple-600 rounded">
+                                <span class="text-sm text-gray-700">Team review</span>
+                            </div>
+                            <div class="bg-white/80 backdrop-blur-sm rounded-lg p-3 flex items-center gap-2">
+                                <input type="checkbox" class="w-5 h-5 text-purple-600 rounded">
+                                <span class="text-sm text-gray-700">Deploy to production</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Preview 3: File Sharing -->
+                    <div class="bg-gradient-to-br from-green-100 to-green-200 rounded-lg p-6 h-64 feature-preview flex flex-col justify-between">
+                        <div class="text-center">
+                            <div class="text-5xl mb-3">📁</div>
+                            <h3 class="text-lg font-bold text-green-800">File Sharing</h3>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="bg-white/80 backdrop-blur-sm rounded-lg p-3 flex items-center gap-3">
+                                <div class="bg-blue-500 rounded p-2">
+                                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-gray-700">Project_Plan.pdf</p>
+                                    <p class="text-xs text-gray-500">2.4 MB</p>
+                                </div>
+                            </div>
+                            <div class="bg-white/80 backdrop-blur-sm rounded-lg p-3 flex items-center gap-3">
+                                <div class="bg-green-500 rounded p-2">
+                                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                    </svg>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-gray-700">Design.sketch</p>
+                                    <p class="text-xs text-gray-500">5.8 MB</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
